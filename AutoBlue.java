@@ -73,8 +73,8 @@ import java.util.Locale;
  * is explained in {@link ConceptVuforiaNavigation}.
  */
 
-@Autonomous(name="Main AutoRed", group ="Test")
-public class AutoRed extends LinearOpMode {
+@Autonomous(name="Main AutoBlue", group ="Test")
+public class AutoBlue extends LinearOpMode {
 
     public static final String TAG = "Vuforia VuMark Sample";
 
@@ -85,6 +85,8 @@ public class AutoRed extends LinearOpMode {
 
     OpenGLMatrix lastLocation = null;
 
+    String pictograph = "UNKNOWN";
+
     /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
@@ -92,20 +94,13 @@ public class AutoRed extends LinearOpMode {
     VuforiaLocalizer vuforia;
 
     @Override public void runOpMode() {
-
         colourServo = hardwareMap.servo.get("colourServo");
-
         colourSensor = hardwareMap.get(ColorSensor.class, "colorDistanceSensor");
-
         sensorDistance = hardwareMap.get(DistanceSensor.class, "colorDistanceSensor");
-
         // hsvValues is an array that will hold the hue, saturation, and value information.
         float hsvValues[] = {0F, 0F, 0F};
-
         // values is a reference to the hsvValues array.
         final float values[] = hsvValues;
-
-
         drive = new MecanumDrive(hardwareMap);
         /*
          * To start up Vuforia, tell it the view that we wish to use for camera monitor (on the RC phone);
@@ -153,25 +148,25 @@ public class AutoRed extends LinearOpMode {
         telemetry.update();
         waitForStart();
 
-        relicTrackables.activate();
 
+        relicTrackables.activate();
 
         if (opModeIsActive()) {
 
-            Color.RGBToHSV((int) (colourSensor.red() * 255),
-                    (int) (colourSensor.green() * 255),
-                    (int) (colourSensor.blue() * 255),
-                    hsvValues);
-            telemetry.addData("Distance (cm)",
-                    String.format(Locale.US, "%.02f", sensorDistance.getDistance(DistanceUnit.CM)));
-            telemetry.addData("Alpha", colourSensor.alpha());
-            telemetry.addData("Red  ", colourSensor.red());
-            telemetry.addData("Green", colourSensor.green());
-            telemetry.addData("Blue ", colourSensor.blue());
-            telemetry.addData("Hue", hsvValues[0]);
-            telemetry.update();
+                Color.RGBToHSV((int) (colourSensor.red() * 255),
+                        (int) (colourSensor.green() * 255),
+                        (int) (colourSensor.blue() * 255),
+                        hsvValues);
+                telemetry.addData("Distance (cm)",
+                        String.format(Locale.US, "%.02f", sensorDistance.getDistance(DistanceUnit.CM)));
+                telemetry.addData("Alpha", colourSensor.alpha());
+                telemetry.addData("Red  ", colourSensor.red());
+                telemetry.addData("Green", colourSensor.green());
+                telemetry.addData("Blue ", colourSensor.blue());
+                telemetry.addData("Hue", hsvValues[0]);
+                telemetry.update();
 
-            //Gem Knock-off
+    //Gem Knock-off
 
             colourServo.setPosition(1);
             sleep(2200);
@@ -206,9 +201,11 @@ public class AutoRed extends LinearOpMode {
             drive.tankDrive(0,0);
             sleep(1000);
 
-            colourServo.setPosition(0);
+            colourServo.setPosition(0.1);
             sleep(1000);
 
+
+            //For lower left thing
             requestOpModeStop();
 
             /**
@@ -218,9 +215,26 @@ public class AutoRed extends LinearOpMode {
              * UNKNOWN will be returned by {@link RelicRecoveryVuMark#from(VuforiaTrackable)}.
              */
 
-            RelicRecoveryVuMark vuMark = RelicRecoveryVuMark.from(relicTemplate);
-            if (vuMark != RelicRecoveryVuMark.UNKNOWN) {
 
+            RelicRecoveryVuMark vuMark = RelicRecoveryVuMark.from(relicTemplate);
+            int timePassed = 0;
+            telemetry.addData("Relic ", vuMark.toString());
+            telemetry.update();
+            while(RelicRecoveryVuMark.from(relicTemplate) == RelicRecoveryVuMark.UNKNOWN)
+            {
+                telemetry.addData("Relic ", vuMark.toString());
+                telemetry.update();
+                drive.mecMove(270,0.5,0);
+                if(timePassed >= 5000) {
+                    break;
+                }
+                sleep(100);
+                timePassed += 100;
+            }
+            telemetry.addData("Relic ", vuMark.toString());
+            telemetry.update();
+            if (vuMark != RelicRecoveryVuMark.UNKNOWN) {
+                pictograph = vuMark.toString();
                 /* Found an instance of the template. In the actual game, you will probably
                  * loop until this condition occurs, then move on to act accordingly depending
                  * on which VuMark was visible. */
@@ -248,58 +262,60 @@ public class AutoRed extends LinearOpMode {
                     // Extract the rotational components of the target relative to the robot
                     double rX = rot.firstAngle;
                     double rY = rot.secondAngle;
-                    double rZ = rot.thirdAngle;//Distance from
+                    double rZ = rot.thirdAngle;
+                    /*
+                while(trans.get(1) > 1 && rot.thirdAngle < -1) {
+                    trans = pose.getTranslation();
+                    rot = Orientation.getOrientation(pose, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES);
 
-                    while(tY > 1)
-                    {
-                        drive.tankDrive(-.35,.35);
+                    // Extract the X, Y, and Z components of the offset of the target relative to the robot
+                    tX = trans.get(0);
+                    tY = trans.get(1);//Angle the robot is at to the pic
+                    tZ = trans.get(2);//Distance
+
+                    // Extract the rotational components of the target relative to the robot
+                    rX = rot.firstAngle;
+                    rY = rot.secondAngle;
+                    rZ = rot.thirdAngle;//Distance from
+
+                    if (rY > 1) {
+                        drive.tankDrive(-.35, .35);
                     }
-                    while(tY < -1)
-                    {
-                        drive.tankDrive(.35,-.35);
+                    if (rY < -1) {
+                        drive.tankDrive(.35, -.35);
                     }
 
+                }*/
+                    if(pictograph.equals("LEFT"))
+                    {
+                        while(pose.getTranslation().get(2) > -730) {
+                            drive.mecMove(180, 0.5, 0);
+                        }
+                    }
+                    else if(pictograph.equals("CENTER"))
+                    {
+                        while(pose.getTranslation().get(2) > -560) {
+                            drive.mecMove(180, 0.5, 0);
+                        }
+                    }
+                    else if(pictograph.equals("RIGHT"))
+                    {
+                        while(pose.getTranslation().get(2) > -390) {
+                            drive.mecMove(180, 0.5, 0);
+                        }
+                    }
+                    drive.tankDrive(0,0);
+                    sleep(500);
                     drive.mecMove(90, 0.5, 0);
-                    sleep(2000);//Move off of Board
+                    sleep(1000);
                     drive.tankDrive(0,0);
                     sleep(500);
-
-                    if(vuMark == RelicRecoveryVuMark.LEFT)
-                    {
-                        while(rZ < 10) {
-                            drive.mecMove(180, 0.5, 0);
-                        }
-                    }
-                    else if(vuMark == RelicRecoveryVuMark.CENTER)
-                    {
-                        while(rZ < 15) {
-                            drive.mecMove(180, 0.5, 0);
-                        }
-                    }
-                    else if(vuMark == RelicRecoveryVuMark.RIGHT)
-                    {
-                        while(rZ < 20) {
-                            drive.mecMove(180, 0.5, 0);
-                        }
-                    }
-                    drive.tankDrive(0,0);
-                    sleep(500);
-
-                    while(tY > -89)//Rotate to face board
-                    {
-                        drive.tankDrive(-.35,.35);
-                    }
-
-                    drive.tankDrive(0.5,0.5);
-                    sleep(2000);
-                    drive.tankDrive(-.35,-.35);
-                    sleep(300);
-                    drive.tankDrive(0,0);
                 }
             }
             else {
                 telemetry.addData("VuMark", "not visible");
-                //drive.tankDrive(0,0);
+                drive.tankDrive(0,0);
+                requestOpModeStop();
             }
 
             telemetry.update();
@@ -310,4 +326,5 @@ public class AutoRed extends LinearOpMode {
     String format(OpenGLMatrix transformationMatrix) {
         return (transformationMatrix != null) ? transformationMatrix.formatAsTransform() : "null";
     }
+
 }

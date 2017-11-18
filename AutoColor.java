@@ -73,15 +73,14 @@ import java.util.Locale;
  * is explained in {@link ConceptVuforiaNavigation}.
  */
 
-@Autonomous(name="Main AutoRed", group ="Test")
-public class AutoRed extends LinearOpMode {
+@Autonomous(name="teST ColoR", group ="Test")
+public class AutoColor extends LinearOpMode {
 
     public static final String TAG = "Vuforia VuMark Sample";
 
-    Servo colourServo;
     ColorSensor colourSensor;
     DistanceSensor sensorDistance;
-    MecanumDrive drive;
+
 
     OpenGLMatrix lastLocation = null;
 
@@ -93,8 +92,6 @@ public class AutoRed extends LinearOpMode {
 
     @Override public void runOpMode() {
 
-        colourServo = hardwareMap.servo.get("colourServo");
-
         colourSensor = hardwareMap.get(ColorSensor.class, "colorDistanceSensor");
 
         sensorDistance = hardwareMap.get(DistanceSensor.class, "colorDistanceSensor");
@@ -105,8 +102,6 @@ public class AutoRed extends LinearOpMode {
         // values is a reference to the hsvValues array.
         final float values[] = hsvValues;
 
-
-        drive = new MecanumDrive(hardwareMap);
         /*
          * To start up Vuforia, tell it the view that we wish to use for camera monitor (on the RC phone);
          * If no camera monitor is desired, use the parameterless constructor instead (commented out below).
@@ -155,156 +150,41 @@ public class AutoRed extends LinearOpMode {
 
         relicTrackables.activate();
 
-
-        if (opModeIsActive()) {
-
-            Color.RGBToHSV((int) (colourSensor.red() * 255),
-                    (int) (colourSensor.green() * 255),
-                    (int) (colourSensor.blue() * 255),
-                    hsvValues);
-            telemetry.addData("Distance (cm)",
-                    String.format(Locale.US, "%.02f", sensorDistance.getDistance(DistanceUnit.CM)));
-            telemetry.addData("Alpha", colourSensor.alpha());
-            telemetry.addData("Red  ", colourSensor.red());
-            telemetry.addData("Green", colourSensor.green());
-            telemetry.addData("Blue ", colourSensor.blue());
-            telemetry.addData("Hue", hsvValues[0]);
-            telemetry.update();
-
-            //Gem Knock-off
-
-            colourServo.setPosition(1);
-            sleep(2200);
-            double avgColor = 0.0;
-            for(int i = 0; i < 5; i++) {
                 Color.RGBToHSV((int) (colourSensor.red() * 255),
                         (int) (colourSensor.green() * 255),
                         (int) (colourSensor.blue() * 255),
                         hsvValues);
+                telemetry.addData("Distance (cm)",
+                        String.format(Locale.US, "%.02f", sensorDistance.getDistance(DistanceUnit.CM)));
+                telemetry.addData("Alpha", colourSensor.alpha());
+                telemetry.addData("Red  ", colourSensor.red());
+                telemetry.addData("Green", colourSensor.green());
+                telemetry.addData("Blue ", colourSensor.blue());
                 telemetry.addData("Hue", hsvValues[0]);
-                telemetry.addData("Avg Hue", avgColor);
-                if(hsvValues[0] >= 330) {
-                    avgColor += (hsvValues[0] - 330) / 5;
-                }
-                else {
-                    avgColor += hsvValues[0] / 5;
-                }
-                sleep(100);
+                telemetry.update();
+
+    //Gem Knock-off
+
+            while(opModeIsActive()) {
+                Color.RGBToHSV((int) (colourSensor.red() * 255),
+                        (int) (colourSensor.green() * 255),
+                        (int) (colourSensor.blue() * 255),
+                        hsvValues);
+                telemetry.addData("Distance (cm)",
+                        String.format(Locale.US, "%.02f", sensorDistance.getDistance(DistanceUnit.CM)));
+                telemetry.addData("Alpha", colourSensor.alpha());
+                telemetry.addData("Red  ", colourSensor.red());
+                telemetry.addData("Green", colourSensor.green());
+                telemetry.addData("Blue ", colourSensor.blue());
+                telemetry.addData("Hue", hsvValues[0]);
                 telemetry.update();
             }
 
-            if((250 > avgColor && avgColor > 120))
-            {
-                drive.mecMove(90, 0.5, 0);//Knock right one off
-                sleep(500);
-            }
-            else if((0 >= avgColor && avgColor <=  30))
-            {
-                drive.mecMove(270, 0.5, 0);//Knock left one off
-                sleep(500);
-            }
-            drive.tankDrive(0,0);
-            sleep(1000);
-
-            colourServo.setPosition(0);
-            sleep(1000);
-
             requestOpModeStop();
 
-            /**
-             * See if any of the instances of {@link relicTemplate} are currently visible.
-             * {@link RelicRecoveryVuMark} is an enum which can have the following values:
-             * UNKNOWN, LEFT, CENTER, and RIGHT. When a VuMark is visible, something other than
-             * UNKNOWN will be returned by {@link RelicRecoveryVuMark#from(VuforiaTrackable)}.
-             */
-
-            RelicRecoveryVuMark vuMark = RelicRecoveryVuMark.from(relicTemplate);
-            if (vuMark != RelicRecoveryVuMark.UNKNOWN) {
-
-                /* Found an instance of the template. In the actual game, you will probably
-                 * loop until this condition occurs, then move on to act accordingly depending
-                 * on which VuMark was visible. */
-                telemetry.addData("VuMark", "%s visible", vuMark);
-
-                /* For fun, we also exhibit the navigational pose. In the Relic Recovery game,
-                 * it is perhaps unlikely that you will actually need to act on this pose information, but
-                 * we illustrate it nevertheless, for completeness. */
-                OpenGLMatrix pose = ((VuforiaTrackableDefaultListener)relicTemplate.getListener()).getPose();
-                telemetry.addData("Pose", format(pose));
-
-                /* We further illustrate how to decompose the pose into useful rotational and
-                 * translational components */
-
-
-                if (pose != null) {
-                    VectorF trans = pose.getTranslation();
-                    Orientation rot = Orientation.getOrientation(pose, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES);
-
-                    // Extract the X, Y, and Z components of the offset of the target relative to the robot
-                    double tX = trans.get(0);
-                    double tY = trans.get(1);//Angle the robot is at to the pic
-                    double tZ = trans.get(2);
-
-                    // Extract the rotational components of the target relative to the robot
-                    double rX = rot.firstAngle;
-                    double rY = rot.secondAngle;
-                    double rZ = rot.thirdAngle;//Distance from
-
-                    while(tY > 1)
-                    {
-                        drive.tankDrive(-.35,.35);
-                    }
-                    while(tY < -1)
-                    {
-                        drive.tankDrive(.35,-.35);
-                    }
-
-                    drive.mecMove(90, 0.5, 0);
-                    sleep(2000);//Move off of Board
-                    drive.tankDrive(0,0);
-                    sleep(500);
-
-                    if(vuMark == RelicRecoveryVuMark.LEFT)
-                    {
-                        while(rZ < 10) {
-                            drive.mecMove(180, 0.5, 0);
-                        }
-                    }
-                    else if(vuMark == RelicRecoveryVuMark.CENTER)
-                    {
-                        while(rZ < 15) {
-                            drive.mecMove(180, 0.5, 0);
-                        }
-                    }
-                    else if(vuMark == RelicRecoveryVuMark.RIGHT)
-                    {
-                        while(rZ < 20) {
-                            drive.mecMove(180, 0.5, 0);
-                        }
-                    }
-                    drive.tankDrive(0,0);
-                    sleep(500);
-
-                    while(tY > -89)//Rotate to face board
-                    {
-                        drive.tankDrive(-.35,.35);
-                    }
-
-                    drive.tankDrive(0.5,0.5);
-                    sleep(2000);
-                    drive.tankDrive(-.35,-.35);
-                    sleep(300);
-                    drive.tankDrive(0,0);
-                }
-            }
-            else {
-                telemetry.addData("VuMark", "not visible");
-                //drive.tankDrive(0,0);
-            }
 
             telemetry.update();
 
-        }
     }
 
     String format(OpenGLMatrix transformationMatrix) {
